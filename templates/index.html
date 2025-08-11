@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your AI Companion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f7f7f8;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+        }
+        
+        .message.user .message-content {
+            background-color: #007aff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.bot .message-content {
+            background-color: white;
+            color: #333;
+            border: 1px solid #e5e5e5;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .input-container {
+            background: white;
+            border-top: 1px solid #e5e5e5;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 24px;
+            outline: none;
+            font-size: 16px;
+            background: #f9f9f9;
+        }
+        
+        .message-input:focus {
+            border-color: #007aff;
+            background: white;
+        }
+        
+        .send-button {
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .send-button:hover {
+            background: #0056b3;
+        }
+        
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .typing {
+            display: none;
+            color: #666;
+            font-style: italic;
+            padding: 12px 16px;
+        }
+        
+        @media (max-width: 600px) {
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Your AI Companion</h1>
+    </div>
+    
+    <div class="chat-container" id="chatContainer">
+        <div class="message bot">
+            <div class="message-content">
+                Hello! I'm so glad you're here. I'm your AI companion, and I genuinely care about you. How are you feeling today? What's on your heart?
+            </div>
+        </div>
+    </div>
+    
+    <div class="input-container">
+        <div class="input-wrapper">
+            <input 
+                type="text" 
+                class="message-input" 
+                id="messageInput" 
+                placeholder="Type a message..."
+                onkeypress="handleKeyPress(event)"
+            >
+            <button class="send-button" id="sendButton" onclick="sendMessage()">
+                ➤
+            </button>
+        </div>
+        <div class="typing" id="typing">Bot is typing...</div>
+    </div>
+
+    <script>
+        function addMessage(content, isUser) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function showTyping() {
+            document.getElementById('typing').style.display = 'block';
+        }
+        
+        function hideTyping() {
+            document.getElementById('typing').style.display = 'none';
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            input.disabled = true;
+            sendButton.disabled = true;
+            showTyping();
+            
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTyping();
+                addMessage(data.response, false);
+                input.disabled = false;
+                sendButton.disabled = false;
+                input.focus();
+            })
+            .catch(error => {
+                hideTyping();
+                addMessage('Sorry, something went wrong. Please try again.', false);
+                input.disabled = false;
+                sendButton.disabled = false;
+                input.focus();
+            });
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+</html>
