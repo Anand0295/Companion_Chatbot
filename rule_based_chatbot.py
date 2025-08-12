@@ -18,7 +18,7 @@ class RuleBasedChatbot:
                 "Hello friend! I'm always here when you need someone to talk to. How are you?"
             ]),
             
-            (r'(my name is|i am|i\'m|call me) ([a-zA-Z]+)', self.handle_name),
+            (r'\b(my name is|i am|i\'m|call me)\s+([A-Za-z]+)(?:\s|$)', self.handle_name),
             
             (r'\b(how are you|how\'s it going)\b', [
                 "I'm doing well, thank you for caring enough to ask! More importantly, how are YOU doing?",
@@ -99,7 +99,7 @@ class RuleBasedChatbot:
                 "Exploring new places and cultures through travel sounds wonderful! What destinations interest you most?"
             ]),
             
-            (r'\b(smart|clever|good|great|awesome|cool)\b', [
+            (r'\b(smart|clever|awesome|cool)\b(?!.*\b(morning|afternoon|evening|day|night)\b)', [
                 "Thank you! That's very kind of you to say!",
                 "You're pretty awesome yourself!",
                 "Thanks! I try my best to be helpful!"
@@ -107,13 +107,13 @@ class RuleBasedChatbot:
             
             (r'\b(sad|happy|excited|tired|bored|lonely|stressed|anxious|worried|depressed|upset|angry|frustrated)\b', self.handle_feelings),
             
-            (r'\b(yes|yeah|yep|sure)\b', [
+            (r'^(yes|yeah|yep|sure)\s*[.!?]*$', [
                 "Great! What would you like to talk about?",
                 "Awesome! How can I help?",
                 "Perfect! What's next?"
             ]),
             
-            (r'\b(no|nope|not really)\b', [
+            (r'^(no|nope|not really)\s*[.!?]*$', [
                 "No worries! Is there something else I can help with?",
                 "That's okay! What would you prefer to discuss?",
                 "Fair enough! What else is on your mind?"
@@ -175,14 +175,14 @@ class RuleBasedChatbot:
                 "Dreams and aspirations are so important! What goals are you working toward?"
             ]),
             
-            (r'\b(problem|issue|trouble|difficult|hard|challenge|struggling|hurt|pain)\b', [
+            (r'\b(problem|issue|trouble|difficult|hard|challenge|struggling|hurt|pain)\b(?!.*\b(no|not)\b)', [
                 "I'm really sorry you're going through a tough time. I'm here to listen and support you. What's happening?",
                 "That sounds really difficult. You don't have to face this alone - I'm here for you. Want to talk about it?",
                 "I can hear that you're struggling, and I want you to know that your feelings are valid. Tell me what's going on.",
                 "Life can be really challenging sometimes. I'm here to listen without judgment. What's weighing on your heart?"
             ]),
             
-            (r'\b(advice|help|suggestion|recommend|opinion|think)\b', [
+            (r'\b(advice|help|suggestion|recommend|opinion)\b|\b(what do you think|what should i do)\b', [
                 "I'm always here to help you work through things! What's on your mind that you'd like to talk about?",
                 "I care about you and want to support you however I can. What situation are you facing?",
                 "You can always come to me when you need someone to think things through with. What's going on?",
@@ -203,8 +203,12 @@ class RuleBasedChatbot:
         ]
     
     def handle_name(self, match):
-        self.user_name = match.group(2).title()
-        return f"It's so wonderful to meet you, {self.user_name}! That's such a beautiful name. I'm really happy you're here, and I hope we can become great friends. How are you feeling today?"
+        name = match.group(2).strip().title()
+        if len(name) > 1 and name.isalpha():
+            self.user_name = name
+            return f"It's so wonderful to meet you, {self.user_name}! That's such a beautiful name. I'm really happy you're here, and I hope we can become great friends. How are you feeling today?"
+        else:
+            return "I'd love to know your name! What should I call you?"
     
     def handle_feelings(self, match):
         feeling = match.group(0).lower()
@@ -241,7 +245,7 @@ class RuleBasedChatbot:
                 return random.choice(caring_responses)
         
         for pattern, responses in self.rules:
-            match = re.search(pattern, user_input)
+            match = re.search(pattern, user_input, re.IGNORECASE)
             if match:
                 if callable(responses):
                     return responses(match)
